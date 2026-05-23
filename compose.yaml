@@ -1,4 +1,49 @@
+networks:
+  web:
+  data:
+
 services:
+  api:
+    build: ./api
+    image: runemortier/api
+    ports:
+      - 8080:8080
+    environment:
+      - POSTGRES_USER=student_user
+      - POSTGRES_PASSWORD=student_password
+      - POSTGRES_DATABASE=labo
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+      - PORT=8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - web
+      - data
+
+  frontend:
+    build: ./web
+    image: runemortier/frontend
+    expose:
+      - 5000
+    environment:
+      - API_URL=http://api:8080
+    volumes:
+      - static:/app/webapp/static:ro
+    networks:
+      - web
+
+  nginx:
+    build: ./nginx
+    image: runemortier/nginx
+    ports:
+      - 80:80
+    volumes:
+      - static:/app/static:ro
+    networks:
+      - web
+
   postgres:
     image: postgres:17.0-alpine
     environment:
@@ -12,36 +57,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  api:
-    build: ./api
-    image: rune-mortier/api
-    ports:
-      - 8080:8080
-    environment:
-      - POSTGRES_USER=student_user
-      - POSTGRES_PASSWORD=student_password
-      - POSTGRES_DATABASE=labo
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=postgres
-      - PORT=8080
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  frontend:
-    build: ./web
-    image: rune-mortier/frontend
-    expose:
-      - 5000
-    environment:
-      - API_URL=http://api:8080
-
-  nginx:
-    build: ./nginx
-    image: rune-mortier/nginx
-    ports:
-      - 80:80
+    networks:
+      - data
 
 volumes:
   postgres:
+  static:

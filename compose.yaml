@@ -1,0 +1,36 @@
+services:             #defines all services
+  api:                #name of service
+    build: ./api      #build image into ./api folder
+    ports:
+      - 8080:8080     #expose port 8080 to host machine
+    environment:
+      - POSTGRES_USER=student_user          #database username
+      - POSTGRES_PASSWORD=student_password  #database password
+      - POSTGRES_DATABASE=labo              #database name
+      - POSTGRES_PORT=5432                  #port it listens on
+      - POSTGRES_HOST=postgres              #hostname
+      - PORT=8080                           #port API listens on
+
+  frontend:
+    build: ./web
+    expose:
+      - 5000
+    environment:
+      - VARIABLE=VALUE
+
+  nginx:
+    build: ./nginx
+    ports:
+      - 80:80
+
+  postgres:
+    image: 'postgres:17.0-alpine'
+    environment:
+      - POSTGRES_USER=student_user
+      - POSTGRES_PASSWORD=student_password
+      - POSTGRES_DB=labo
+    volumes:
+      - postgres:/var/lib/postgresql/data/
+
+volumes:
+  postgres:

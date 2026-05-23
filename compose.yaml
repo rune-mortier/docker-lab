@@ -1,36 +1,47 @@
-services:             #defines all services
-  api:                #name of service
-    build: ./api      #build image into ./api folder
-    ports:
-      - 8080:8080     #expose port 8080 to host machine
-    environment:
-      - POSTGRES_USER=student_user          #database username
-      - POSTGRES_PASSWORD=student_password  #database password
-      - POSTGRES_DATABASE=labo              #database name
-      - POSTGRES_PORT=5432                  #port it listens on
-      - POSTGRES_HOST=postgres              #hostname
-      - PORT=8080                           #port API listens on
-
-  frontend:
-    build: ./web
-    expose:
-      - 5000
-    environment:
-      - VARIABLE=VALUE
-
-  nginx:
-    build: ./nginx
-    ports:
-      - 80:80
-
+services:
   postgres:
-    image: 'postgres:17.0-alpine'
+    image: postgres:17.0-alpine
     environment:
       - POSTGRES_USER=student_user
       - POSTGRES_PASSWORD=student_password
       - POSTGRES_DB=labo
     volumes:
       - postgres:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U student_user -d labo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./api
+    image: rune-mortier/api
+    ports:
+      - 8080:8080
+    environment:
+      - POSTGRES_USER=student_user
+      - POSTGRES_PASSWORD=student_password
+      - POSTGRES_DATABASE=labo
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+      - PORT=8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./web
+    image: rune-mortier/frontend
+    expose:
+      - 5000
+    environment:
+      - API_URL=http://api:8080
+
+  nginx:
+    build: ./nginx
+    image: rune-mortier/nginx
+    ports:
+      - 80:80
 
 volumes:
   postgres:
